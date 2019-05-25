@@ -1,2 +1,0 @@
-# MySources
-Created with CodeSandbox
