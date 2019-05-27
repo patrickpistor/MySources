@@ -21,22 +21,22 @@ class App extends Component {
     });
   };
 
-  handleSubmit = async e => {
-    e.preventDefault();
-    const itemsRef = firebase.database().ref("Stories");
-    const item = {
-      affiliation: "Strong Left",
-      author: "Bruce Wayne",
-      sourceTitle: "Title",
-      synopsis: "Synopsis",
-      image: "Image",
-      sourceUrl: "Url",
-      headline: "Headline"
-    };
-    var newPostRef = await itemsRef.push(item);
-    this.setState({
-      currentItem: newPostRef.key
-    });
+  handleSubmit = async () => {
+    const itemsRef = firebase
+      .database()
+      .ref("Stories/aHR0cHM6Ly93d3cubm90aW9uLnNvLw==");
+
+    const userRef = firebase
+      .database()
+      .ref("Stories/aHR0cHM6Ly93d3cubm90aW9uLnNvLw==/userIDs");
+    console.log(itemsRef);
+    var newPostRef = await itemsRef
+      .push({ userIDs: [...userRef, "Unregistered 2"] })
+      .catch(function(error) {
+        var errorMessage = error.message;
+        console.log(errorMessage);
+      });
+    console.log(itemsRef);
   };
 
   logout = () => {
@@ -49,7 +49,7 @@ class App extends Component {
 
   register = () => {
     auth
-      .createUserWithEmailAndPassword("test2@test.com", "testing")
+      .createUserWithEmailAndPassword("test@test.com", "testing")
       .then(async result => {
         const userID = result.user.uid;
         const itemsRef = firebase.database().ref("Users");
@@ -60,7 +60,7 @@ class App extends Component {
         console.log(userID);
         itemsRef.child(userID).set(item);
         auth
-          .signInWithEmailAndPassword("test2@test.com", "testing")
+          .signInWithEmailAndPassword("test@test.com", "testing")
           .then(result => {
             const user = result.user;
             this.setState({
@@ -81,7 +81,7 @@ class App extends Component {
 
   login = () => {
     auth
-      .signInWithEmailAndPassword("batman@batman.com", "batman")
+      .signInWithEmailAndPassword("test@test.com", "testing")
       .then(result => {
         const user = result.user;
         this.setState({
@@ -97,19 +97,15 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-        <form onSubmit={this.handleSubmit}>
-          <p>{this.state.currentItem}</p>
-          <button>Add Item</button>
-          {this.state.user ? (
-            <button onClick={this.logout}>Log Out</button>
-          ) : (
-            <button onClick={this.login}>Log In</button>
-          )}
-          <button onClick={() => console.log(this.state.user)}>
-            Print User
-          </button>
-          <button onClick={this.register}>Register</button>
-        </form>
+        <p>{this.state.currentItem}</p>
+        <button onClick={this.handleSubmit}>Add Item</button>
+        {this.state.user ? (
+          <button onClick={this.logout}>Log Out</button>
+        ) : (
+          <button onClick={this.login}>Log In</button>
+        )}
+        <button onClick={() => console.log(this.state.user)}>Print User</button>
+        <button onClick={this.register}>Register</button>
       </div>
     );
   }
