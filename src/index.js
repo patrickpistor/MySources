@@ -1,115 +1,73 @@
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
-import firebase, { auth } from "./firebase.js";
+import { Route, BrowserRouter as Router } from "react-router-dom";
 
-import "./styles.css";
+import { Provider } from "react-redux";
+import { createStore, combineReducers } from "redux";
 
-class App extends Component {
-  constructor() {
-    super();
-    this.state = {
-      currentItem: "",
-      user: null
-    };
-  }
+import {
+  ReactReduxFirebaseProvider,
+  firebaseReducer
+} from "react-redux-firebase";
+import firebase from "@firebase/app";
+import "@firebase/auth";
+import "@firebase/database";
 
-  componentDidMount = () => {
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        this.setState({ user });
-      }
-    });
-  };
+import { Header } from "./components/Header/Header";
+import Login from "./screens/Login/Login";
+import Register from "./screens/Register/Register";
+import Home from "./screens/Home/Home";
 
-  handleSubmit = async () => {
-    const itemsRef = firebase
-      .database()
-      .ref("Stories/aHR0cHM6Ly93d3cubm90aW9uLnNvLw==");
+const firebaseConfig = {
+  apiKey: "AIzaSyBx9o8T9Sh_ckfoV_mZmzB7j5l-5G_J_hU",
+  authDomain: "nvn2-f261a.firebaseapp.com",
+  databaseURL: "https://nvn2-f261a.firebaseio.com",
+  projectId: "nvn2-f261a",
+  storageBucket: "nvn2-f261a.appspot.com",
+  messagingSenderId: "819076290403",
+  appId: "1:819076290403:web:c4954e15930e4caf"
+};
 
-    const userRef = firebase
-      .database()
-      .ref("Stories/aHR0cHM6Ly93d3cubm90aW9uLnNvLw==/userIDs");
-    console.log(itemsRef);
-    var newPostRef = await itemsRef
-      .push({ userIDs: [...userRef, "Unregistered 2"] })
-      .catch(function(error) {
-        var errorMessage = error.message;
-        console.log(errorMessage);
-      });
-    console.log(itemsRef);
-  };
+const rrfConfig = {
+  userProfile: "users",
+  attachAuthIsReady: true,
+  firebaseStateName: "firebase",
+  debug: true
+};
 
-  logout = () => {
-    auth.signOut().then(() => {
-      this.setState({
-        user: null
-      });
-    });
-  };
-
-  register = () => {
-    auth
-      .createUserWithEmailAndPassword("test@test.com", "testing")
-      .then(async result => {
-        const userID = result.user.uid;
-        const itemsRef = firebase.database().ref("Users");
-        const item = {
-          affiliation: "Strong Left",
-          stories: []
-        };
-        console.log(userID);
-        itemsRef.child(userID).set(item);
-        auth
-          .signInWithEmailAndPassword("test@test.com", "testing")
-          .then(result => {
-            const user = result.user;
-            this.setState({
-              user
-            });
-          })
-          .catch(function(error) {
-            var errorMessage = error.message;
-            console.log(errorMessage);
-          });
-      })
-      .catch(function(error) {
-        // Handle Errors here.
-        var errorMessage = error.message;
-        console.log(errorMessage);
-      });
-  };
-
-  login = () => {
-    auth
-      .signInWithEmailAndPassword("test@test.com", "testing")
-      .then(result => {
-        const user = result.user;
-        this.setState({
-          user
-        });
-      })
-      .catch(function(error) {
-        var errorMessage = error.message;
-        console.log(errorMessage);
-      });
-  };
-
-  render() {
-    return (
-      <div className="App">
-        <p>{this.state.currentItem}</p>
-        <button onClick={this.handleSubmit}>Add Item</button>
-        {this.state.user ? (
-          <button onClick={this.logout}>Log Out</button>
-        ) : (
-          <button onClick={this.login}>Log In</button>
-        )}
-        <button onClick={() => console.log(this.state.user)}>Print User</button>
-        <button onClick={this.register}>Register</button>
-      </div>
-    );
-  }
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
 }
 
+const rootReducer = combineReducers({
+  firebase: firebaseReducer
+});
+
+const initialState = {};
+
+const store = createStore(rootReducer, initialState);
+
+const rrfProps = {
+  firebase,
+  config: rrfConfig,
+  dispatch: store.dispatch
+  // createFirestoreInstance // <- needed if using firestore
+};
+
+const Routing = () => (
+  <Provider store={store}>
+    <ReactReduxFirebaseProvider {...rrfProps}>
+      <Router>
+        <Header />
+        <div>
+          <Route exact path="/" component={Home} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
+        </div>
+      </Router>
+    </ReactReduxFirebaseProvider>
+  </Provider>
+);
+
 const rootElement = document.getElementById("root");
-ReactDOM.render(<App />, rootElement);
+ReactDOM.render(<Routing />, rootElement);
